@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<!-- This content is part of the following document: http://go.microsoft.com/fwlink/?LinkId=330004 -->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" /> <!-- For IE on an intranet. -->
+  <title>Two-Body Problem</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      overflow-y: scroll; /* There's an issue with the scrollbar "randomly" appearing - this just keeps it always visible in case the user is using a very wide and narrow monitor. */
+    }
+
+    body {
+      width: 1024px; /* Currently, most screens can handle this. */
+      margin: auto; /* Center the page content. */
+      background-color: #777;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* Start screen font. */
+    }
+
+    header {
+      color: #FFF;
+      text-shadow: 5px 5px 10px #333;
+    }
+
+    section {
+      position: relative; /* Float children relative to this element. */
+    }
+
+      section form {
+        width: 210px; /* This is a bit less than the "section #WebGLCanvasElementContainer margin-left" value to provide a nice space between the form and the viewport. */
+        float: left;
+        text-align: center; /* Center the button elements. */
+      }
+
+        section form fieldset {
+          text-align: left; /* Undo the button center aligning trick for the text in the form. */
+          margin-bottom: 1.25em; /* Adjust this so that the height of the form is about the same height as the WebGL Three.js viewport element. */
+        }
+
+          section form fieldset input {
+            width: 100%;
+          }
+
+        section form td {
+          white-space: nowrap; /* Don't let words like "x-position" break at the hyphen (which occurs in Chrome). */
+        }
+
+      section #WebGLCanvasElementContainer {
+        border: 1px solid #DDD; /* Match the native color of the fieldset border. */
+        width: 800px; /* The assumed fixed width of the WebGL Three.js viewport element. */
+        height: 600px; /* The assumed fixed height of the WebGL Three.js viewport element. */
+        margin-left: 224px; /* This is "body width" minus "section #WebGLCanvasElementContainer width" or 1024px - 800px = 224px. */
+        background-image: url('images/starField_0.15.png'); /* 0.15 opacity value. */
+      }
+
+      section article {
+        padding: 0 1em;
+        color: white;
+      }
+
+      section button {
+        width: 4.5em;
+      }
+  </style>
+  <script>
+    // Preload all images/bitmaps.
+    var preloadImages = [];
+    var preloadImagePaths = ["images/jupiter.jpg", "images/mercury.jpg", "images/starField.png", "images/starField_0.15.png"];
+    
+    for (var i = 0; i < preloadImagePaths.length; i++) {
+      preloadImages[i] = new Image();
+      
+      preloadImages[i].onerror = function() { 
+        if (console) {
+          console.error(this.src + " error.");
+        } // if
+      }; // onerror
+      
+      preloadImages[i].src = preloadImagePaths[i]; // Preload images to improve perceived app speed.
+    } // for  
+  </script>
+</head>
+
+<body>
+  <header>
+    <h1>Two-Body Problem</h1>
+  </header>
+  <section>
+    <form id="initialConditions">
+      <fieldset>
+        <legend>Mass 1</legend>
+        <table id="mass1">
+          <tr>
+            <td>mass:</td>
+            <td><input id="m1_mass" type="number" value="1E19" required="required" /></td>
+          </tr>
+          <tr>
+            <td>x-position:</td>
+            <td><input id="m1_position_x" type="number" value="0" required="required" /></td>
+          </tr>
+          <tr>
+            <td>y-position:</td>
+            <td><input id="m1_position_y" type="number" value="0" required="required" /></td>
+          </tr>
+          <tr>
+            <td>x-velocity:</td>
+            <td><input id="m1_velocity_x" type="number" value="0" required="required" /></td>
+          </tr>
+          <tr>
+            <td>y-velocity:</td>
+            <td><input id="m1_velocity_y" type="number" value="0" required="required" /></td>
+          </tr>
+          <tr style="display: none;">
+            <td>bitmap:</td>
+            <td><input type="text" value="images/jupiter.jpg" required="required" /></td>
+          </tr>
+        </table>
+      </fieldset>
+      <fieldset>
+        <legend>Mass 2</legend>
+        <table id="mass2">
+          <tr>
+            <td>mass:</td>
+            <td><input type="number" value="1E18" required="required" /></td>
+          </tr>
+          <tr>
+            <td>x-position:</td>
+            <td><input type="number" value="200" required="required" /></td>
+          </tr>
+          <tr>
+            <td>y-position:</td>
+            <td><input type="number" value="0" required="required" /></td>
+          </tr>
+          <tr>
+            <td>x-velocity:</td>
+            <td><input type="number" value="0" required="required" /></td>
+          </tr>
+          <tr>
+            <td>y-velocity:</td>
+            <td><input type="number" value="900" required="required" /></td>
+          </tr>
+          <tr style="display: none;">
+            <td>bitmap:</td>
+            <td><input type="text" value="images/mercury.jpg" required="required" /></td>
+          </tr>
+        </table>
+      </fieldset>
+      <button id="submitButton">Submit</button>
+      <button id="reloadButton">Reload</button>
+      <button id="infoButton">Info</button>
+    </form>
+    <div id="WebGLCanvasElementContainer">
+      <!-- Three.js will add a canvas element to the DOM here. -->
+      <!-- The following <article> element (along with its content) will be removed via JavaScript just before the simulation starts: -->
+      <article>
+        <h2>What's the 2-body problem?</h2>
+        <p>
+          Consider a universe filled with two and only two celestial bodies (masses) that are mutually attracted to one another via the force of gravity (and nothing else). 
+          We give each body some initial conditions (mass, position, and velocity) and set the system in motion to see what happens.
+        </p>
+        <h2>Running the simulation</h2>
+        <ul>
+          <li>To start the simulation with the current set of initial conditions, click the <strong>Submit</strong> button.</li>
+          <li>To orbit, left-click and drag the mouse.</li>
+          <li>To pan, right-click and drag the mouse.</li>
+          <li>To zoom, roll the mouse wheel.</li>
+          <li>To enter your own initial conditions, enter numeric values of your choice (in the form to the left) and click <strong>Submit</strong>. 
+          Note that large values such as 10<sup>18</sup> can be entered as 1E18.</li>
+          <li>To restart the simulation from scratch, click the <strong>Reload</strong> button (equivalent to refreshing the page).</li>
+          <li>For additional information and resources, click the <strong>Info</strong> button.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+  <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script> <!-- The "CDN" for Three.js  -->
+  <script src="https://rawgithub.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script> <!-- Allows for orbiting, panning, and zooming. -->
+  <script>
+    var DENSITY = 1.38E15; // This value determined qualitatively by observing how large the spheres look onscreen (i.e., their radii).
+
+    document.getElementById('submitButton').addEventListener('click', handleSubmitButton, false);
+    document.getElementById('reloadButton').addEventListener('click', handleReloadButton, false);
+    document.getElementById('infoButton').addEventListener('click', handleInfoButton, false);
+
+    var simulation = Simulation(); // Call the Simulation constructor to create a new simulation object.
+
+    function Simulation() { // A constructor.
+      var that = {}; // The object returned by this constructor.
+      var worker = null; // Will contain a reference to a fast number-chrunching worker thread that runs outside of this UR/animation thread.
+      var requestAnimationFrameID = null; // Used to cancel a prior requestAnimationFrame request.
+      var gl = {}; // Will contain WebGL related items.
+
+      gl.viewportWidth = 800; // The width of the Three.js viewport.
+      gl.viewportHeight = 600; // The height of the Three.js viewport.
+
+      gl.cameraSpecs = {
+        aspectRatio: gl.viewportWidth / gl.viewportHeight, // Camera frustum aspect ratio.
+        viewAngle: 50 // Camera frustum vertical field of view, in degrees.
+      };
+
+      gl.clippingPlane = {
+        near: 0.1, // The distance of the near clipping plane (which always coincides with the monitor).
+        far: 1000 // The distance of the far clipping plane (note that you get a negative far clipping plane for free, which occurs at the negative of this value).
+      };
+
+      gl.quads = 32; // Represents both the number of vertical segments and the number of horizontal rings for each mass's sphere wireframe.
+
+      gl.renderer = window.WebGLRenderingContext ? new THREE.WebGLRenderer({ alpha: true }) : new THREE.CanvasRenderer({ alpha: true }); // If WebGL isn't supported, fallback to using the canvas-based renderer (which most browsers support). Note that passing in "{ antialias: true }" is unnecessary in that this is the default behavior. However, we pass in "{ alpha: true }" in order to let the background PNG image shine through.
+      gl.renderer.setClearColor(0x000000, 0); // Make the background completely transparent (the actual color, black in this case, does not matter) so that the PNG background image can shine through.
+      gl.renderer.setSize(gl.viewportWidth, gl.viewportHeight); // Set the size of the renderer.
+
+      gl.scene = new THREE.Scene(); // Create a Three.js scene.
+
+      gl.camera = new THREE.PerspectiveCamera(gl.cameraSpecs.viewAngle, gl.cameraSpecs.aspectRatio, gl.clippingPlane.near, gl.clippingPlane.far); // Set up the viewer's eye position.
+      gl.camera.position.set(0, 95, 450); // The camera starts at the origin, so move it to a good position.
+      gl.camera.lookAt(gl.scene.position); // Make the camera look at the origin of the xyz-coordinate system.
+
+      gl.controls = new THREE.OrbitControls(gl.camera, gl.renderer.domElement); // Allows for orbiting, panning, and zooming via OrbitsControls.js by http://threejs.org. For an example, see http://threejs.org/examples/misc_controls_orbit.html.
+
+      gl.pointLight = new THREE.PointLight(0xFFFFFF); // Set the color of the light source (white).
+      gl.pointLight.position.set(0, 250, 250); // Position the light source at (x, y, z).
+      gl.scene.add(gl.pointLight); // Add the light source to the scene.
+
+      gl.spheres = []; // Will contain WebGL sphere mesh objects representing the point masses.
+
+      var init = function (initialConditions) { // Public method, resets everything when called.
+        if (requestAnimationFrameID) {
+          cancelAnimationFrame(requestAnimationFrameID); // Cancel the previous requestAnimationFrame request.
+        }
+
+        if (worker) {
+          worker.terminate(); // Terminate the previously running worker thread to ensure a responsive UI.
+        }
+        worker = new Worker('2BodyWorker.js'); // Spawn a fast number-chrunching thread that runs outside of this UR/animation thread.
+
+        document.getElementById('WebGLCanvasElementContainer').style.backgroundImage = "url('images/starField.png')"; // Switch back to the non-opaque PNG background image.
+        document.getElementsByTagName('article')[0].style.display = "none"; // Remove from page-flow the one (and only) article element (along with all of its content).
+        document.getElementById('WebGLCanvasElementContainer').appendChild(gl.renderer.domElement); // Append renderer element to DOM.
+
+        while (gl.spheres.length) { // Remove any prior spheres from the scene and empty the gl.spheres array:
+          gl.scene.remove(gl.spheres.pop());
+        } // while
+
+        for (var i = 0; i < initialConditions.length; i++) { // Set the sphere objects in gl.spheres to initial conditions.
+          initializeMesh(initialConditions[i]); // This call sets the gl.spheres array.
+        } // for
+
+        worker.postMessage({
+          cmd: 'init', // Pass the initialization command to the web worker.
+          initialConditions: initialConditions // Send a copy of the initial conditions to the web worker, so it can initialize its persistent global variables.
+        }); // worker.postMessage
+
+        worker.onmessage = function (evt) { // Process the results of the "crunch" command sent to the web worker (via this UI thread).
+          for (var i = 0; i < evt.data.length; i++) {
+            gl.spheres[i].position.x = evt.data[i].p.x; // Transfer the xy-plane implied in 2BodyWorker.js to the xz-plane in this UI thread.
+            gl.spheres[i].position.z = evt.data[i].p.y;
+            gl.spheres[i].position.y = 0; // 2BodyWorker.js is 2D (i.e., the physics are constrained to a plane).
+            gl.spheres[i].rotation.y += initialConditions[i].rotation; // Place worker.onmessage in the init method in order to access its initialConditions array.
+          }
+          gl.renderer.render(gl.scene, gl.camera); // Update the positions of the masses (sphere meshes) onscreen based on the data returned by 2BodyWorker.js.
+        }; // worker.onmessage
+
+        function initializeMesh(initialCondition) {
+          var texture = THREE.ImageUtils.loadTexture(initialCondition.bitmap); // Create texture object based on the given bitmap path.
+          var material = new THREE.MeshPhongMaterial({ map: texture }); // Create a material (for the spherical mesh) that reflects light, potentially causing sphere surface shadows.
+          var geometry = new THREE.SphereGeometry(initialCondition.radius, gl.quads, gl.quads); // Radius size, number of vertical segments, number of horizontal rings.
+          var mesh = new THREE.Mesh(geometry, material); // A mesh represents the object (typically composed of many tiny triangles) to be displayed - in this case a hollow sphere with a bitmap on its surface.
+
+          mesh.position.x = initialCondition.position.x;
+          mesh.position.z = initialCondition.position.y; // Convert from 2D to "3D".
+          mesh.position.y = 0; // The physics are constrained to the xz-plane (i.e., the xy-plane in 2BodyWorker.js).
+
+          gl.scene.add(mesh); // Add the sphere to the Three.js scene.
+          gl.spheres.push(mesh); // Make the Three.js mesh sphere objects accessible outside of this helper function.
+        } // initializeMesh
+      } // init
+      that.init = init; // This is what makes the method public.
+
+      var run = function () { // Public method.
+        worker.postMessage({
+          cmd: 'crunch' // This processing occurs between animation frames and, therefore, is assumed to take a relatively small amount of time (as compared to current frame rates).
+        }); // worker.postMessage
+        gl.controls.update(); // Allows for orbiting, panning, and zooming.
+        requestAnimationFrameID = requestAnimationFrame(run); // Allow for the cancellation of this requestAnimationFrame request.
+      }; // run()
+      that.run = run;
+
+      return that; // The object returned by the constructor.
+    } // Simulation
+
+    function handleSubmitButton(evt) {
+      var m1 = InitialCondition(document.getElementById('mass1').querySelectorAll('input')); // A constructor returning an initial condition object.
+      var m2 = InitialCondition(document.getElementById('mass2').querySelectorAll('input'));
+
+      evt.preventDefault(); // Don't refresh the page when the user clicks this form button.
+
+      if (!window.WebGLRenderingContext) { displayCanvasRendererWarning(); } // If necessary, warn the user that they're using a canvas-based Three.js renderer and that they should upgrade their browser so that a faster WebGL-based renderer can be used instead.
+
+      simulation.init([m1, m2]);
+      simulation.run(); // The images have been preloaded so this works immediately.
+
+      function InitialCondition(inputElements) {
+        var mass = parseFloat(inputElements[0].value);
+
+        return {
+          mass: mass,
+          radius: calculateRadius(mass),
+          rotation: calculateRotation(mass),
+          position: { x: parseFloat(inputElements[1].value), y: parseFloat(inputElements[2].value) },
+          velocity: { x: parseFloat(inputElements[3].value), y: parseFloat(inputElements[4].value) },
+          bitmap: inputElements[5].value // This is a string value (hence the non-use of parseFloat).
+        };
+
+        function calculateRadius(mass) {
+          /*
+            Mass equals density times volume or m = D * V = D * (4/3 * PI * r^3), and solving for r = [(3 * m)/(4 * PI * D)]^(1/3)
+          */
+          var radicand = (3 * mass) / (4 * Math.PI * DENSITY); // Only change the value of DENSITY to affect the value returned by this function.
+
+          return Math.pow(radicand, 1 / 3);
+        } // calculateRadius
+
+        function calculateRotation(mass) {
+          /*
+            Using a power model, let the x-axis represent the radius and the y-axis the rotational rate of the sphere. 
+            The power model is y = a * x^b, where a and b are constants (which were empirically derived).
+          */
+          var radius = calculateRadius(mass);
+
+          return 1.7 * Math.pow(radius, -1.9); // Rotational rate as a function of the sphere's radius.
+        } // calculateRotation
+      } // InitialCondition
+    } // handleSubmitButton
+
+    function handleReloadButton(evt) {
+      /*  
+        Clicking a form button automatically refreshes the page, which is exactly the behavior we want (i.e., location.reload() is not necessary here).
+      */
+    } // handleReloadButton
+
+    function handleInfoButton(evt) {
+      /*
+        Note that when the info page covers up the animation, the animation stops because this is how requestAnimationFrame works. In this sense, we get a free pause feature.
+      */
+      evt.preventDefault(); // Don't refresh the page when the user clicks this form button.
+      window.open("info.html"); // Open the info.html page in another tab.
+    } // handleInfoButton
+
+    function displayCanvasRendererWarning() { // This assumes that the user's browser at least supports canvas.
+      var articleElement = document.getElementsByTagName('article')[0];
+
+      articleElement.innerHTML = "<h2>WebGL not supported, using canvas-based renderer, please upgrade your browser.</h2>";
+      articleElement.style.display = "block";
+    }
+  </script>
+</body>
+</html>

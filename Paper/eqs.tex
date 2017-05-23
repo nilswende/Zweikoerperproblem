@@ -1,0 +1,203 @@
+% \documentclass[10pt]{scrartcl}
+\documentclass[10pt,twocolumn]{scrartcl}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+
+\usepackage{uarial}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{graphicx}
+\usepackage{tabularx}
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{3mm}
+\setlength{\textheight}{23.8cm}
+\setlength{\headheight}{1cm}
+\setlength{\topmargin}{-10mm}
+
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{0cm}
+\setlength{\textwidth}{16cm}
+\setlength{\columnsep}{8mm}
+
+\usepackage{multicol}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\definecolor{grau}{gray}{0.95}
+\definecolor{dunkelgrau}{gray}{0.85}
+
+\usepackage[normal]{caption}
+\usepackage{lipsum}
+
+\setlength{\parindent}{5mm}
+\setlength{\parskip}{0mm}
+
+\usepackage{float}
+\restylefloat{figure}
+
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\textfraction}{0.2}
+
+\newcommand{\abs}[1]{\ensuremath{\left\vert#1\right\vert}}
+
+%###########################################################
+% die Sachen mit der Kopfzeile
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\fancyhf{} % leere alle Felder
+\fancyhead[L]{\footnotesize Simulation des Keplerproblems} % Titel des Aufsatzes
+\fancyhead[R]{\footnotesize Constantin Schneider, Nils Wende}
+\fancyfoot[C]{\footnotesize \thepage/\pageref{LastPage}}
+% \fancyfoot[C]{\footnotesize \thepage}
+\renewcommand{\headrulewidth}{0.4pt} % obere Trennlinie
+\pagestyle{fancy}
+%###########################################################
+
+\newcommand{\ownsection}[1]{\begin{center}\LARGE\bf#1\end{center}}
+
+\begin{document}
+
+\twocolumn[
+\ownsection{Simulation des Keplerproblems}
+
+\begin{center}
+Constantin Schneider (constantinschneider94@gmail.com), Nils Wende (nils.wende@hotmail.com) \\
+Mannheim, November 2015
+\end{center}
+\vspace*{5mm}
+]
+
+% \begin{multicols}{2}
+\begin{equation}F = \abs{F_1} = \abs{F_2} = G \cdot \frac{m_1 \cdot m_2}{r^2}
+\label{eq:newton}
+\end{equation}
+
+\begin{equation}x_{n+\frac{1}{2}}^i := x_n^i + \frac{1}{2} \cdot \Delta t \cdot v_n^i
+\label{eq:22}
+\end{equation}
+
+\begin{equation}v_{n+1}^i := v_n^i + \Delta t \cdot a_{n+\frac{1}{2}}^i
+\label{eq:23}
+\end{equation}
+
+\begin{equation}x_{n+1}^i := x_{n+\frac{1}{2}}^i + \frac{1}{2} \cdot \Delta t \cdot v_{n+1}^i
+\label{eq:24}
+\end{equation}
+
+\begin{equation}x_{\frac{1}{2}}^i := x_0^i + \frac{1}{2} \cdot \Delta t \cdot v_0^i
++ \frac{1}{4} \cdot (\Delta t)^2 \cdot a_0^i
+\label{eq:25}
+\end{equation}
+
+\begin{equation}F_x = F \cdot \cos \theta
+\label{eq:2}
+\end{equation}
+
+\begin{equation}F_y = F \cdot \sin \theta
+\label{eq:3}
+\end{equation}
+
+\begin{equation}\cos \theta = \frac{\Delta x}{r} = \frac{x_2 - x_1}{r}
+\label{eq:4}
+\end{equation}
+
+\begin{equation}\sin \theta = \frac{\Delta y}{r} = \frac{y_2 - y_1}{r}
+\label{eq:5}
+\end{equation}
+
+\begin{equation}F_x = G \cdot \frac{m_1 \cdot m_2 \cdot (x_2 - x_1)}{r^3}
+\label{eq:8}
+\end{equation}
+
+\begin{equation}F = m \cdot a
+\label{eq:9}
+\end{equation}
+
+\begin{equation}F_x = m_1 \cdot a_x
+\label{eq:10}
+\end{equation}
+
+\begin{equation}
+	\begin{aligned}
+		F_x {} & = m_1 \cdot a_x \\
+  			& = G \cdot \frac{m_1 \cdot m_2 \cdot (x_2 - x_1)}{r^3}
+	\end{aligned}
+\label{eq:11}
+\end{equation}
+
+\begin{equation}a_x = G \cdot \frac{m_2 \cdot (x_2 - x_1)}{r^3}
+\label{eq:12}
+\end{equation}
+
+\begin{equation}
+	\begin{aligned}
+		r {} & = \sqrt{(\Delta x)^2 + (\Delta y)^2} \\
+  			& = [(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{1}{2}
+	\end{aligned}
+\label{eq:13}
+\end{equation}
+
+\begin{equation}a_x = G \cdot \frac{m_2 \cdot (x_2 - x_1)}
+									{[(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{3}{2}}
+\label{eq:14}
+\end{equation}
+
+\begin{equation}a_y = G \cdot \frac{m_2 \cdot (y_2 - y_1)}
+									{[(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{3}{2}}
+\label{eq:15}
+\end{equation}
+
+\begin{equation}a_x = G \cdot \frac{m_1 \cdot (x_1 - x_2)}
+								{[(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{3}{2}}
+\label{eq:16}
+\end{equation}
+
+\begin{equation}a_y = G \cdot \frac{m_1 \cdot (y_1 - y_2)}
+									{[(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{3}{2}}
+\label{eq:17}
+\end{equation}
+
+\begin{equation}a_{1_x} := G \cdot \frac{m_2 \cdot (x_2 - x_1)}
+			{\alpha}
+\label{eq:18}
+\end{equation}
+
+\begin{equation}a_{1_y} := G \cdot \frac{m_2 \cdot (y_2 - y_1)}
+			{\alpha}
+\label{eq:19}
+\end{equation}
+
+\begin{equation}a_{2_x} := G \cdot \frac{m_1 \cdot (x_1 - x_2)}
+			{\alpha}
+\label{eq:20}
+\end{equation}
+
+\begin{equation}a_{2_y} := G \cdot \frac{m_1 \cdot (y_1 - y_2)}
+			{\alpha}
+\label{eq:21}
+\end{equation}
+
+mit $\alpha := [(x_2-x_1)^2 + (y_2-y_1)^2]^\frac{3}{2}$ und $\alpha \neq 0$.
+
+\begin{enumerate}
+	\item Wähle einen kleinen Zeitschritt $\Delta t$.
+	\item Wähle die Masse und komponentenweise die initialen Positions- und Geschwindigkeitswerte der Körper.
+	\item Berechne die initialen Beschleunigungswerte $a_0^i$ mit den Gleichungen \eqref{eq:18} bis \eqref{eq:21}.
+	\item Berechne mit den Werten der $a_0^i$ mit Gleichung \eqref{eq:25} die Werte von $x_{\frac{1}{2}}^i$.
+	\item Wiederholung bis manueller Abbruch (Startwert $n:=0$):
+	\begin{enumerate}
+		\item Berechne mit den Werten der $x_{n+\frac{1}{2}}^i$ mit den Gleichungen \eqref{eq:18} bis \eqref{eq:21} die Werte der $a_{n+\frac{1}{2}}^i$.
+		\item Berechne mit den Werten der $a_{n+\frac{1}{2}}^i$ mit Gleichung \eqref{eq:23} die Werte der $v_{n+1}^i$.
+		\item Berechne mit den Werten der $v_{n+1}^i$ mit Gleichung \eqref{eq:24} die Werte der $x_{n+1}^i$.
+		\item Zeige die neuen Positionen der Massen an.
+		\item Berechne mit den Werten der $x_{n+1}^i$ mit Gleichung \eqref{eq:22} die Werte der $x_{n+\frac{3}{2}}^i$.
+		\item Setze $n := n+1$.
+	\end{enumerate}
+\end{enumerate}
+
+\end{document}
